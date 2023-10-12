@@ -8,6 +8,8 @@
 """
 
 import logging
+from yafs.stats import Stats
+from yafs.metrics import metrics
 
 
 class Placement(object):
@@ -107,14 +109,35 @@ class ClusterPlacement(Placement):
     It only runs once, in the initialization.
 
     """
+    def __init__(self, defaultPath="result"):
+        super(ClusterPlacement, self).__init__()
+        self.stats = Stats(defaultPath)
+        
     def initial_allocation(self, sim, app_name):
-        #We find the ID-nodo/resource
         value = {"model": "Cluster"}
-        id_cluster = sim.topology.find_IDs(value) #there is only ONE Cluster
+        id_cluster = sim.topology.find_IDs(value)  # there is only ONE Cluster
         value = {"model": "m-"}
         id_mobiles = sim.topology.find_IDs(value)
 
-        #Given an application we get its modules implemented
+       # Retrieve the wattage information for the cluster
+        total_time = sim.env.now
+        wattage_info = self.stats.get_watt(total_time, sim.topology, metrics.WATT_SERVICE)
+        cluster_wattage = wattage_info[id_cluster]["watt"]
+    # Check if the wattage exceeds the threshold
+        if cluster_wattage >200:
+        # Find another cluster with lower wattage
+          for cluster_id, watt_data in wattage_info.items():
+             if watt_data["watt"] <= 200:
+                id_cluster = cluster_id
+                break
+
+    # If you have multiple clusters and want to optimize placement based on energy efficiency,
+    # you can sort the clusters based on their wattage and deploy the modules on the most energy-efficient cluster.
+        sorted_clusters = sorted(wattage_info.items(), key=lambda x: x[1]["watt"])
+        most_efficient_cluster = sorted_clusters[0][0]
+        id_cluster = most_efficient_cluster
+
+    # Given an application we get its modules implemented
         app = sim.apps[app_name]
         services = app.services
 
