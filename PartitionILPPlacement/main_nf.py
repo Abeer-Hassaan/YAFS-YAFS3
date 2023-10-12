@@ -6,17 +6,19 @@
 
 """
 import json
+import sys
+sys.path.append('/content/drive/MyDrive/Colab_Notebooks/YAFS-YAFS3/examples/_defunct/PartitionILPPlacement/jsonPopulation.py')
 
 from yafs.core import Sim
 from yafs.application import Application,Message
 from yafs.topology import Topology
-from yafs.placement import JSONPlacement,JSONPlacementOnCloud
+from yafs.placement import JSONPlacement,ClusterPlacement
 from yafs.distribution import *
 import numpy as np
 
-from yafs.utils import fractional_selectivity
+from yafs.application import fractional_selectivity
 
-from selection_multipleDeploys import DeviceSpeedAwareRouting
+from yafs.path_routing import DeviceSpeedAwareRouting
 from jsonPopulation import JSONPopulation
 
 import time
@@ -110,7 +112,7 @@ def main(simulated_time,experimento,ilpPath,it):
     t = Topology()
     dataNetwork = json.load(open(experimento+'networkDefinition.json'))
     t.load(dataNetwork)
-    t.write("network.gexf")
+    #t.write("network.gexf")
 
     """
     APPLICATION
@@ -124,8 +126,8 @@ def main(simulated_time,experimento,ilpPath,it):
     PLACEMENT algorithm
     """
     placementJson = json.load(open(experimento+'allocDefinition%s.json'%ilpPath))
-    placement = JSONPlacement(name="Placement",json=placementJson)
-
+ ##   placement = JSONPlacement(name="Placement",json=placementJson)
+    placement    =ClusterPlacement(name="Placement")
     ### Placement histogram
 
     # listDevices =[]
@@ -180,7 +182,7 @@ def main(simulated_time,experimento,ilpPath,it):
                 data.append(element)
         pop_app.data["sources"]=data
 
-        s.deploy_app(apps[aName], placement, pop_app, selectorPath)
+        s.deploy_app2(apps[aName], placement, pop_app, selectorPath)
 
 
     s.run(stop_time, test_initial_deploy=False, show_progress_monitor=False) #TEST to TRUE
@@ -201,7 +203,7 @@ if __name__ == '__main__':
     # import logging.config
     import os
     pathExperimento = "exp_rev/"
-    pathExperimento = "/home/uib/src/YAFS/src/examples/PartitionILPPlacement/exp_rev/"
+    pathExperimento = "/content/drive/MyDrive/Colab_Notebooks/YAFS-YAFS3/examples/_defunct/PartitionILPPlacement/exp_rev/"
 
     print(os.getcwd())
     # logging.config.fileConfig(os.getcwd()+'/logging.ini')
@@ -211,11 +213,11 @@ if __name__ == '__main__':
         np.random.seed(i)
 # 1000000
         print("Running Partition")
-        main(simulated_time=1000000,  experimento=pathExperimento,ilpPath='',it=i)
+        main(simulated_time=1000,  experimento=pathExperimento,ilpPath='',it=i)
         print("\n--- %s seconds ---" % (time.time() - start_time))
         start_time = time.time()
         print("Running: ILP ")
-        main(simulated_time=1000000,  experimento=pathExperimento, ilpPath='ILP',it=i)
+        main(simulated_time=1000,  experimento=pathExperimento, ilpPath='ILP',it=i)
         print("\n--- %s seconds ---" % (time.time() - start_time))
 
     print("Simulation Done")
